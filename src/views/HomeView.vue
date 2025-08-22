@@ -4,7 +4,7 @@
     <section class="hero">
       <div class="container hero-inner">
         <div class="hero-copy">
-          <p class="eyebrow">Disponibile per nuove collaborazioni</p>
+          <p class="eyebrow">Disponibile per nuove collaborazioni!</p>
           <h1>
             Creo prodotti digitali
             <span class="accent">veloci</span>, <span class="accent">accessibili</span>
