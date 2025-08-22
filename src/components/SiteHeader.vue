@@ -22,20 +22,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import siteConfig from '../site.config.js'
+
 const props = defineProps({
-  site: { type: Object, required: true },
+  site: { type: Object, default: () => siteConfig },   // fallback automatico
   theme: { type: String, default: 'dark' }
 })
 
+const site = computed(() => props.site || siteConfig)
+
 const open = ref(false)
 const toggle = () => (open.value = !open.value)
-const handleClick = (e) => {
-  if (e.target.closest('a')) open.value = false
-}
+const handleClick = (e) => { if (e.target.closest('a')) open.value = false }
 
 onMounted(() => {
-  // header shadow allo scroll
   const header = document.querySelector('[data-elevate]')
   let lastY = window.scrollY
   const onScroll = () => {
@@ -46,3 +47,4 @@ onMounted(() => {
   window.addEventListener('scroll', onScroll, { passive: true })
 })
 </script>
+
