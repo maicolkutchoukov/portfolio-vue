@@ -180,7 +180,7 @@
           </div>
         </div>
         <aside class="facts" aria-label="Metriche sintetiche">
-          <div class="fact"><span class="kpi">5+</span><span>anni esperienza</span></div>
+          <div class="fact"><span class="kpi">2+</span><span>anni esperienza</span></div>
           <div class="fact"><span class="kpi">30+</span><span>progetti lanciati</span></div>
           <div class="fact"><span class="kpi">&lt; 1s</span><span>LCP tipico</span></div>
         </aside>
@@ -213,7 +213,7 @@
             <input type="text" v-model="form.website" class="hp" tabindex="-1" autocomplete="off" />
           </div>
           <button class="btn primary" type="submit">Invia richiesta</button>
-          <p class="form-note">Oppure scrivimi a <a href="mailto:hello@example.com">hello@example.com</a></p>
+          <p class="form-note">Oppure scrivimi a <a href="mailto:maicol.ktc@gmail.com">maicol.ktc@gmail.com</a></p>
         </form>
       </div>
     </section>
