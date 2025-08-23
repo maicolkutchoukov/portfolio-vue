@@ -2,9 +2,14 @@
   <header class="site-header" data-elevate>
     <div class="container header-inner">
       <RouterLink class="brand" :to="{ name: 'home' }" aria-label="Home">
-        <span class="logo" aria-hidden="true">◆</span>
-        <span class="brand-text">{{ site.author }}</span>
-      </RouterLink>
+  <img 
+    src="/assets/img/logo.jpeg" 
+    alt="Logo CodeMK.dev" 
+    class="logo-img"
+  />
+  <!-- <span class="brand-text">{{ site.author }}</span> -->
+</RouterLink>
+
 
       <nav class="nav" aria-label="Principale">
         <button class="nav-toggle" :aria-expanded="open ? 'true' : 'false'" aria-controls="navMenu" @click="toggle">
