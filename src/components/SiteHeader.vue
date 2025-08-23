@@ -2,24 +2,32 @@
   <header class="site-header" data-elevate>
     <div class="container header-inner">
       <RouterLink class="brand" :to="{ name: 'home' }" aria-label="Home">
-  <img 
-    src="/assets/img/logo.jpeg" 
-    alt="Logo CodeMK.dev" 
-    class="logo-img"
-  />
-  <!-- <span class="brand-text">{{ site.author }}</span> -->
-</RouterLink>
-
+        <img
+          :src="logoUrl"
+          alt="Logo CodeMK.dev"
+          class="logo-img"
+        />
+        <!-- <span class="brand-text">{{ site.author }}</span> -->
+      </RouterLink>
 
       <nav class="nav" aria-label="Principale">
-        <button class="nav-toggle" :aria-expanded="open ? 'true' : 'false'" aria-controls="navMenu" @click="toggle">
+        <button
+          class="nav-toggle"
+          :aria-expanded="open ? 'true' : 'false'"
+          aria-controls="navMenu"
+          @click="toggle"
+        >
           <span class="sr-only">Apri menu</span> ☰
         </button>
         <ul id="navMenu" :class="{ open }" @click="handleClick">
           <li><a href="#portfolio">Portfolio</a></li>
           <li><a href="#about">Chi sono</a></li>
           <li><a href="#contatti">Contatti</a></li>
-          <li><button class="theme-toggle" aria-label="Cambia tema" @click="$emit('toggle-theme')">🌓</button></li>
+          <li>
+            <button class="theme-toggle" aria-label="Cambia tema" @click="$emit('toggle-theme')">
+              🌓
+            </button>
+          </li>
         </ul>
       </nav>
     </div>
@@ -30,8 +38,11 @@
 import { ref, onMounted, computed } from 'vue'
 import siteConfig from '../site.config.js'
 
+// ✅ importa l'asset da src/assets/...
+import logoUrl from '@/assets/img/logo.jpeg' // richiede alias @ → /src nel vite.config.js
+
 const props = defineProps({
-  site: { type: Object, default: () => siteConfig },   // fallback automatico
+  site: { type: Object, default: () => siteConfig },
   theme: { type: String, default: 'dark' }
 })
 
@@ -52,4 +63,3 @@ onMounted(() => {
   window.addEventListener('scroll', onScroll, { passive: true })
 })
 </script>
-

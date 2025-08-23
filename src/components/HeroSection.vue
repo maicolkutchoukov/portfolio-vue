@@ -22,10 +22,14 @@
       </div>
       <div class="hero-media">
         <figure class="card-3d">
-          <img src="/assets/img/avatar.jpg" alt="Ritratto autore" loading="eager" decoding="async" />
+          <img :src="avatarUrl" alt="Ritratto autore" loading="eager" decoding="async" />
         </figure>
       </div>
     </div>
     <div class="hero-bg" aria-hidden="true"></div>
   </section>
 </template>
+
+<script setup>
+import avatarUrl from '@/assets/img/avatar.jpg' // richiede alias @ -> /src
+</script>
