@@ -11,6 +11,16 @@
     "tags": ["php", "frontend", "personal"]
   },
   {
+    "title": "Sito GoBike",
+    "slug": "gobike",
+    "type": "public",
+    "year": 2024,
+    "excerpt": "Landing page con countdown live, form contatti e ottimizzazione SEO.",
+    "url": "https://gotobike.netlify.app",
+    "cover": "/public/assets/img/gobike.png",
+    "tags": ["seo", "frontend", "vue", "css", "scss"]
+  },
+  {
     "title": "Landing Page Evento Tech",
     "slug": "landing-evento-tech",
     "type": "public",
