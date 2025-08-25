@@ -2,19 +2,31 @@
   <div>
     <SiteHeader :theme="theme" @toggle-theme="toggleTheme" />
     <router-view />
-    <!-- <SiteFooter :theme="theme" /> se serve -->
+    <!-- <SiteFooter :theme="theme" /> -->
   </div>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount } from "vue";
+import { ref, watchEffect, onMounted, onBeforeUnmount } from "vue";
+// Usa il path RELATIVO se non hai l'alias "@"
+import SiteHeader from "./components/SiteHeader.vue";
+// import SiteFooter from "./components/SiteFooter.vue";
+
+const theme = ref(localStorage.getItem("theme") ?? "dark");
+const toggleTheme = () => {
+  theme.value = theme.value === "dark" ? "light" : "dark";
+};
+watchEffect(() => {
+  document.documentElement.setAttribute("data-theme", theme.value);
+  localStorage.setItem("theme", theme.value);
+});
 
 let onMove, onScroll, io;
 
 onMounted(() => {
   const root = document.documentElement;
 
-  // Mouse glow (aggiorna --x/--y con rAF)
+  // Mouse glow
   let raf = 0;
   onMove = (e) => {
     if (raf) return;
@@ -32,9 +44,12 @@ onMounted(() => {
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
-  // Reveal-in con IntersectionObserver
+  // Reveal-in
   io = new IntersectionObserver(
-    (entries) => entries.forEach((en) => en.target.classList.toggle("reveal-in", en.isIntersecting)),
+    (entries) =>
+      entries.forEach((en) =>
+        en.target.classList.toggle("reveal-in", en.isIntersecting)
+      ),
     { threshold: 0.12, rootMargin: "0px 0px -10% 0px" }
   );
   document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
@@ -46,4 +61,3 @@ onBeforeUnmount(() => {
   io?.disconnect();
 });
 </script>
-
