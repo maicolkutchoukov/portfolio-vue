@@ -12,7 +12,7 @@
         </p>
 
         <h1 id="hero-title">
-          Creo prodotti digitali
+          Realizzo prodotti digitali
           <span class="accent">veloci</span>, <span class="accent">accessibili</span>
           e <span class="accent">memorabili</span>.
         </h1>

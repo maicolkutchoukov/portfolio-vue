@@ -1,0 +1,88 @@
+// src/data/projects.js
+
+export const projects = [
+    {
+      title: "Portfolio Personale",
+      slug: "portfolio-personale",
+      type: "public",
+      featured: true,
+      year: 2025,
+      excerpt: "Il mio sito personale: design moderno, spotlight interattivo e filtri portfolio.",
+      url: "https://example.com",
+      cover: "cover-1.jpg",
+      tags: ["php", "frontend", "personal"],
+    },
+    {
+      title: "Sito GoBike",
+      slug: "landing-gobike",
+      type: "public",
+      year: 2024,
+      excerpt: "Landing page con countdown live, form contatti e ottimizzazione SEO.",
+      url: "https://gotobike.netlify.app",
+      cover: "gobike.png",
+      tags: ["frontend", "vue", "css", "scss"],
+    },
+    {
+      title: "Landing Page Evento Tech",
+      slug: "landing-evento-tech",
+      type: "public",
+      year: 2024,
+      excerpt: "Landing page con countdown live, form contatti e ottimizzazione SEO.",
+      url: "https://example.com/evento",
+      cover: "cover-1.jpg",
+      tags: ["seo", "frontend", "html", "css"],
+    },
+    {
+      title: "CRM Produzione — Scheduling & KPI",
+      slug: "crm-produzione-kpi",
+      type: "case_study",
+      nda: true,
+      year: 2025,
+      industry: "Manifatturiero",
+      role: "Lead Developer",
+      excerpt: "Case study: pianificazione risorse multi-stabilimento e KPI real-time.",
+      challenge: [
+        "Allineare la pianificazione tra più stabilimenti",
+        "Ridurre i tempi di ciclo non monitorati",
+      ],
+      approach: [
+        "Ottimizzazione query MySQL + caching",
+        "Eventi asincroni per aggiornamenti KPI",
+        "Ruoli e permessi granulari",
+      ],
+      impact: [
+        "Tempo ciclo ordine −27%",
+        "Report KPI < 500ms p95",
+        "Errori inserimento dati −40%",
+      ],
+      cover: "abstract-kpi.jpg",
+      tags: ["php", "mysql", "performance", "crm"],
+    },
+    {
+      title: "CRM Clienti — Pipeline commerciale",
+      slug: "crm-pipeline-commerciale",
+      type: "case_study",
+      nda: true,
+      year: 2024,
+      industry: "Servizi B2B",
+      role: "Full-stack Developer",
+      excerpt: "Case study: pipeline, reminder e automazioni email.",
+      challenge: [
+        "Mancanza di visibilità sullo stato dei lead",
+        "Processi manuali per follow-up",
+      ],
+      approach: [
+        "Pipeline drag&drop in JS",
+        "Reminder automatici via cron job",
+        "Integrazione email transazionali",
+      ],
+      impact: [
+        "+22% lead convertiti",
+        "Follow-up automatizzati (−80% errori)",
+        "Visibilità completa ciclo vendite",
+      ],
+      cover: "abstract-crm.jpg",
+      tags: ["crm", "automation", "php", "js"],
+    },
+  ];
+  
