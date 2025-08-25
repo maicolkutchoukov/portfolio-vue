@@ -35,6 +35,23 @@
   --t-med:.25s;
   --t-slow:.45s;
 }
+:root {
+  --bg: #0a0a0a;
+  --text: #e8e8ea;
+  --muted: #a0a0a8;
+  --card: #111218;
+  --primary: #00f5ff;
+  --accent: #7c3aed;
+}
+
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --text: #0a0a0a;
+  --muted: #444;
+  --card: #f6f7fb;
+  --primary: #0bbcd1;
+  --accent: #6b28ff;
+}
 /* Variante chiara (opzionale via [data-theme="light"]) */
 html[data-theme="light"]{
   --bg:#f6f9ff; --bg-alt:#ffffff; --text:#0b1424; --muted:#5b6b8c;
