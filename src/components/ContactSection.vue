@@ -6,20 +6,28 @@
         <p>Scrivimi due righe: risponderò con una proposta chiara e tempi definiti.</p>
       </header>
 
-      <form class="contact__form reveal" @submit.prevent="onSubmit" novalidate aria-describedby="contact-status">
-        <!-- Progress neon -->
+      <form
+        class="contact__form reveal"
+        :class="{ 'has-error': !!error, 'is-loading': loading, 'is-done': done, 'shake': shake }"
+        @submit.prevent="onSubmit"
+        novalidate
+        aria-describedby="contact-status"
+      >
+        <!-- Progress neon (non rimuove layout) -->
         <div class="contact__progress" v-show="loading" aria-hidden="true"></div>
 
         <!-- Glow / holo frame -->
         <span class="contact__holo" aria-hidden="true"></span>
 
-        <!-- Success burst -->
-        <div class="burst" v-if="done" aria-hidden="true">
-          <span v-for="p in particles" :key="p.id" class="particle"
-                :style="{ '--x': p.x+'px', '--y': p.y+'px', '--rz': p.r+'deg', '--d': p.d+'ms' }"></span>
-          <svg class="tick" viewBox="0 0 52 52">
-            <path class="tick__path" d="M14 27 L23 36 L38 18" />
-          </svg>
+        <!-- Confetti burst + tick (overlay, non tocca il layout) -->
+        <div class="burst" v-show="done" aria-hidden="true">
+          <span
+            v-for="p in particles"
+            :key="p.id"
+            class="particle"
+            :style="{ '--x': p.x+'px', '--y': p.y+'px', '--rz': p.r+'deg', '--d': p.d+'ms' }"
+          ></span>
+          <svg class="tick" viewBox="0 0 52 52"><path class="tick__path" d="M14 27 L23 36 L38 18" /></svg>
         </div>
 
         <div class="contact__grid">
@@ -35,7 +43,7 @@
               :aria-invalid="!!errors.name"
               :aria-describedby="errors.name ? 'err-name' : null"
             />
-            <span v-if="errors.name" class="fld__error" id="err-name">{{ errors.name }}</span>
+            <span v-show="errors.name" class="fld__error" id="err-name">{{ errors.name }}</span>
           </label>
 
           <!-- Email -->
@@ -50,7 +58,7 @@
               :aria-invalid="!!errors.email"
               :aria-describedby="errors.email ? 'err-email' : null"
             />
-            <span v-if="errors.email" class="fld__error" id="err-email">{{ errors.email }}</span>
+            <span v-show="errors.email" class="fld__error" id="err-email">{{ errors.email }}</span>
           </label>
 
           <!-- Messaggio -->
@@ -64,18 +72,11 @@
               :aria-invalid="!!errors.message"
               :aria-describedby="errors.message ? 'err-message' : null"
             ></textarea>
-            <span v-if="errors.message" class="fld__error" id="err-message">{{ errors.message }}</span>
+            <span v-show="errors.message" class="fld__error" id="err-message">{{ errors.message }}</span>
           </label>
 
           <!-- Honeypot -->
-          <input
-            class="hp"
-            type="text"
-            v-model="form.website"
-            tabindex="-1"
-            autocomplete="off"
-            aria-hidden="true"
-          />
+          <input class="hp" type="text" v-model="form.website" tabindex="-1" autocomplete="off" aria-hidden="true" />
         </div>
 
         <div class="contact__actions">
@@ -84,12 +85,13 @@
             type="submit"
             :disabled="loading"
             :class="{ 'is-loading': loading, 'is-done': done }"
+            @mousemove="onBtnMouse"
           >
             <span class="btn__content" aria-hidden="true">
-              <span class="btn__plane" v-if="loading"></span>
-              <span class="btn__label" v-if="!loading && !done">Invia richiesta</span>
-              <span class="btn__label" v-else-if="loading">Invio…</span>
-              <span class="btn__label" v-else>Inviato</span>
+              <span class="btn__jet" v-show="loading"></span>
+              <span class="btn__label" v-show="!loading && !done">Invia richiesta</span>
+              <span class="btn__label" v-show="loading">Invio…</span>
+              <span class="btn__label" v-show="!loading && done">Inviato</span>
             </span>
             <span class="sr-only">
               <template v-if="loading">Invio in corso…</template>
@@ -104,21 +106,19 @@
           </p>
         </div>
 
-        <!-- Stato accessibile -->
+        <!-- Stato accessibile (non rimuove layout) -->
         <p id="contact-status" class="sr-only" aria-live="polite">
           <template v-if="loading">Invio in corso…</template>
           <template v-else-if="done">Messaggio inviato correttamente.</template>
           <template v-else-if="error">{{ error }}</template>
         </p>
 
-        <!-- Alert visivo -->
-        <div v-if="done" class="contact__toast contact__toast--ok" role="status" aria-live="polite">
-          <span class="ico" aria-hidden="true">✓</span>
-          Grazie! Ti risponderò a breve.
+        <!-- Toasts (v-show: non rimuovono il form) -->
+        <div class="contact__toast contact__toast--ok" v-show="done" role="status" aria-live="polite">
+          <span class="ico" aria-hidden="true">✓</span> Grazie! Ti risponderò a breve.
         </div>
-        <div v-if="error" class="contact__toast contact__toast--err" role="alert" aria-live="assertive">
-          <span class="ico" aria-hidden="true">!</span>
-          {{ error }}
+        <div class="contact__toast contact__toast--err" v-show="error" role="alert" aria-live="assertive">
+          <span class="ico" aria-hidden="true">!</span> {{ error }}
         </div>
       </form>
     </div>
@@ -133,8 +133,7 @@ const errors = ref({ name: '', email: '', message: '' })
 const loading = ref(false)
 const done = ref(false)
 const error = ref('')
-
-// particelle per l'esplosione di successo
+const shake = ref(false)            // solo per animare, non nasconde nulla
 const particles = ref([])
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -143,28 +142,40 @@ function validate() {
   errors.value = { name: '', email: '', message: '' }
   let ok = true
   if (!form.value.name) { errors.value.name = 'Inserisci il tuo nome.'; ok = false }
-  if (!form.value.email) { errors.value.email = 'Inserisci un’email valida.'; ok = false }
+  if (!form.value.email) { errors.value.email = 'Inserisci un’email.'; ok = false }
   else if (!emailRe.test(form.value.email)) { errors.value.email = 'Formato email non valido.'; ok = false }
   if (!form.value.message) { errors.value.message = 'Scrivi un breve messaggio.'; ok = false }
   return ok
 }
 
-function makeParticles(n = 26) {
-  // genera una rosa di particelle attorno al bottone
+function makeParticles(n = 36) {
   particles.value = Array.from({ length: n }, (_, i) => ({
     id: i,
-    x: (Math.random() - 0.5) * 360, // offset x
-    y: (Math.random() - 0.5) * 240, // offset y
-    r: Math.floor(Math.random() * 360), // rotazione
-    d: 400 + Math.floor(Math.random() * 500) // durata
+    x: (Math.random() - 0.5) * 420,
+    y: (Math.random() - 0.5) * 260,
+    r: Math.floor(Math.random() * 360),
+    d: 450 + Math.floor(Math.random() * 650)
   }))
+}
+
+function onBtnMouse(e) {
+  const rect = e.currentTarget.getBoundingClientRect()
+  const x = ((e.clientX - rect.left) / rect.width) * 100
+  const y = ((e.clientY - rect.top) / rect.height) * 100
+  e.currentTarget.style.setProperty('--x', `${x}%`)
+  e.currentTarget.style.setProperty('--y', `${y}%`)
 }
 
 async function onSubmit() {
   error.value = ''
   done.value = false
+  shake.value = false
+
   if (form.value.website) return // honeypot
-  if (!validate()) return
+  if (!validate()) {
+    microShake()
+    return
+  }
 
   loading.value = true
   try {
@@ -175,119 +186,106 @@ async function onSubmit() {
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok || data?.ok === false) {
-      throw new Error(data?.error || 'Invio non riuscito, riprova tra poco.')
+      throw new Error(data?.error || 'Invio non riuscito. Riprova tra poco.')
     }
     done.value = true
     makeParticles()
-    // reset form con piccolo delay per lasciare godere l'animazione
-    setTimeout(() => {
-      form.value = { name: '', email: '', message: '', website: '' }
-    }, 300)
+    // reset valori input ma lascia visibile il form e le animazioni
+    setTimeout(() => { form.value = { name: '', email: '', message: '', website: '' } }, 300)
   } catch (e) {
     error.value = e?.message || 'Errore imprevisto.'
+    microShake()
   } finally {
-    // lascia correre l’animazione di volo prima di spegnere lo stato loading
-    setTimeout(() => { loading.value = false }, 300)
+    // lascia finire le animazioni
+    setTimeout(() => { loading.value = false }, 280)
   }
+}
+
+function microShake() {
+  // triggera la classe .shake senza rimuovere l’elemento
+  shake.value = false
+  requestAnimationFrame(() => { shake.value = true })
+  setTimeout(() => { shake.value = false }, 350)
 }
 </script>
 
 <style scoped>
-/* =========================================================
-   CONTACT — Futuristic Neon Animations + Accessibilità
-   ========================================================= */
-
 :root {
-  /* Neon brand (coerenti con la tua palette) */
   --neon-cyan: #00f5ff;
   --neon-violet: #7c3aed;
 }
 
-/* Aura di sfondo leggerissima per la section */
+/* Sezione */
 .contact { position: relative; }
 .contact::before {
-  content: "";
-  position: absolute; inset: 0;
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(600px 320px at 85% 10%, color-mix(in oklab, var(--neon-violet), transparent 90%), transparent 60%),
-    radial-gradient(520px 300px at 15% 90%, color-mix(in oklab, var(--neon-cyan), transparent 90%), transparent 60%);
-  pointer-events: none; z-index: 0;
-  filter: saturate(120%);
+    radial-gradient(620px 340px at 85% 12%, color-mix(in oklab, var(--neon-violet), transparent 90%), transparent 60%),
+    radial-gradient(540px 320px at 12% 90%, color-mix(in oklab, var(--neon-cyan), transparent 90%), transparent 60%);
+  filter: saturate(115%);
 }
-
-/* Testata */
 .contact__head p { color: var(--muted) }
 
-/* Card form */
+/* Card form (mai hidden) */
 .contact__form{
-  position: relative;
-  margin-top: 16px;
-  padding: 20px;
-  border-radius: var(--radius);
-  border: 1px solid var(--stroke);
+  position: relative; margin-top: 16px; padding: 20px; z-index: 1;
+  border-radius: var(--radius); border: 1px solid var(--stroke);
   background:
     linear-gradient(180deg, color-mix(in oklab, var(--card), transparent 5%), transparent),
-    radial-gradient(120% 80% at 10% -10%, color-mix(in oklab, var(--neon-violet), transparent 90%), transparent 70%),
+    radial-gradient(120% 80% at 10% -10%, color-mix(in oklab, var(--neon-violet), transparent 92%), transparent 70%),
     radial-gradient(120% 80% at 100% 110%, color-mix(in oklab, var(--neon-cyan), transparent 92%), transparent 70%);
   box-shadow: var(--shadow);
-  z-index: 1;
   overflow: clip;
+  transition: transform .2s ease;
+}
+.contact__form.has-error { border-color: color-mix(in oklab, #ff6b6b 70%, var(--stroke)); }
+.contact__form.shake { animation: shake .32s ease; }
+@keyframes shake {
+  0%,100%{ transform: translateX(0) }
+  20%{ transform: translateX(-6px) }
+  40%{ transform: translateX(5px) }
+  60%{ transform: translateX(-3px) }
+  80%{ transform: translateX(2px) }
 }
 
-/* Progress bar superiore (solo quando loading) */
+/* Progress bar (layout-safe) */
 .contact__progress{
   position:absolute; top:0; left:0; height:3px; width:100%;
   background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet));
   transform-origin: 0 50%;
-  animation: prog 1.2s ease-in-out infinite;
+  animation: prog 1.15s ease-in-out infinite;
 }
 @keyframes prog {
   0% { transform: scaleX(0); opacity:.8 }
-  50% { transform: scaleX(.6); opacity:1 }
+  50% { transform: scaleX(.65); opacity:1 }
   100% { transform: scaleX(1); opacity:.8 }
 }
 
-/* Holo ring animato sul bordo (conic gradient) */
+/* Holo edge */
 .contact__holo{
   position:absolute; inset:0; border-radius:inherit; pointer-events:none;
   background:
     conic-gradient(from 0deg,
-      transparent 0 24%,
-      color-mix(in oklab, var(--neon-cyan), transparent 40%) 24% 38%,
-      transparent 38% 62%,
-      color-mix(in oklab, var(--neon-violet), transparent 40%) 62% 76%,
-      transparent 76% 100%);
+      transparent 0 22%,
+      color-mix(in oklab, var(--neon-cyan), transparent 45%) 22% 36%,
+      transparent 36% 64%,
+      color-mix(in oklab, var(--neon-violet), transparent 45%) 64% 78%,
+      transparent 78% 100%);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor; mask-composite:exclude;
-  padding: 1px;
-  opacity:.0; transition: opacity .5s ease;
+  -webkit-mask-composite:xor; mask-composite:exclude; padding: 1px;
+  opacity:.0; transition: opacity .45s ease;
 }
 .contact__form:hover .contact__holo{ opacity: .9 }
 
-/* Griglia campi */
-.contact__grid{
-  display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px;
-}
-.contact__actions{
-  display:flex; align-items:center; gap: 12px; margin-top: 14px; flex-wrap: wrap;
-}
-@media (max-width: 720px){
-  .contact__grid{ grid-template-columns: 1fr }
-}
-
-/* Field */
+/* Grid campi */
+.contact__grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
 .fld{ display:flex; flex-direction:column; gap:6px }
 .fld--full{ grid-column: 1/-1 }
 .fld__label{ font-weight:800; font-size:.95rem }
 .fld__control{
-  width:100%;
-  padding: 11px 12px;
-  border: 1px solid var(--stroke);
-  border-radius: 12px;
-  background: color-mix(in oklab, var(--bg), #0b1220 40%);
-  color: var(--text);
+  width:100%; padding: 11px 12px; border: 1px solid var(--stroke); border-radius: 12px;
+  background: color-mix(in oklab, var(--bg), #0b1220 40%); color: var(--text);
   transition: outline-color var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease, transform .2s ease;
-  box-shadow: inset 0 0 0 0 rgba(122,162,255,0);
 }
 .fld__control:focus{
   outline: 2px solid color-mix(in oklab, var(--neon-cyan), transparent 45%);
@@ -300,43 +298,46 @@ async function onSubmit() {
 }
 .fld__error{ color:#ffb3b3; font-size:.9rem }
 
-/* Bottone + micro-animazioni */
+@media (max-width: 720px){ .contact__grid{ grid-template-columns: 1fr } }
+
+/* Actions + Button */
+.contact__actions{ display:flex; align-items:center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
 .contact__btn{
-  min-width: 200px; position: relative; overflow:hidden;
+  min-width: 210px; position: relative; overflow:hidden;
   border: 1px solid color-mix(in oklab, var(--neon-cyan), var(--neon-violet) 40%);
+  --x:50%; --y:50%;
 }
 .contact__btn::after{
   content:""; position:absolute; inset:0; pointer-events:none; opacity:.0;
-  background: radial-gradient(120px 60px at var(--x,50%) var(--y,50%), color-mix(in oklab, var(--neon-cyan), transparent 75%), transparent 60%);
+  background: radial-gradient(120px 60px at var(--x) var(--y), color-mix(in oklab, var(--neon-cyan), transparent 75%), transparent 60%);
   transition: opacity .25s ease;
 }
 .contact__btn:hover::after{ opacity:.8 }
 .contact__btn.is-loading{ cursor: progress }
 .contact__btn.is-done{
   background: linear-gradient(90deg, color-mix(in oklab, var(--neon-cyan), transparent 20%), color-mix(in oklab, var(--neon-violet), transparent 20%));
-  animation: btnPulse 1.6s ease-out 1;
+  animation: btnPulse 1.4s ease-out 1;
 }
 @keyframes btnPulse {
   0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--neon-cyan), transparent 60%) }
   100% { box-shadow: 0 0 0 18px transparent }
 }
 
-/* Icona aereo (loading) */
-.btn__plane{
-  width: 16px; height: 16px; display:inline-block; margin-right:8px; background: currentColor; clip-path: polygon(0 45%, 70% 45%, 70% 30%, 100% 50%, 70% 70%, 70% 55%, 0 55%);
-  animation: plane 900ms ease-in-out infinite;
-  vertical-align: -2px;
+/* Jet durante invio */
+.btn__jet{
+  width: 16px; height: 16px; display:inline-block; margin-right:8px; background: currentColor;
+  clip-path: polygon(0 45%, 70% 45%, 70% 30%, 100% 50%, 70% 70%, 70% 55%, 0 55%);
+  animation: jet 900ms ease-in-out infinite; vertical-align: -2px;
 }
-@keyframes plane {
+@keyframes jet {
   0% { transform: translateX(0) translateY(0) rotate(0) }
   50% { transform: translateX(6px) translateY(-2px) rotate(5deg) }
   100% { transform: translateX(0) translateY(0) rotate(0) }
 }
 
-/* Toast (success / error) */
+/* Toasts (non rimuovono il form) */
 .contact__toast{
-  margin-top: 12px;
-  display:inline-flex; align-items:center; gap:10px;
+  margin-top: 12px; display:inline-flex; align-items:center; gap:10px;
   padding: 10px 12px; border-radius: 12px; font-weight: 700;
   border: 1px solid var(--stroke); background: rgba(0,0,0,.15);
   animation: toastIn .36s cubic-bezier(.2,.8,.2,1);
@@ -352,11 +353,8 @@ async function onSubmit() {
   to  { opacity:1; transform: none }
 }
 
-/* Success burst */
-.burst{
-  position:absolute; inset:0; pointer-events:none; z-index: 2;
-  display:grid; place-items:center;
-}
+/* Confetti + tick (overlay) */
+.burst{ position:absolute; inset:0; pointer-events:none; z-index: 2; display:grid; place-items:center; }
 .particle{
   position:absolute; top: calc(100% - 56px); left: 50%;
   width: 8px; height: 8px; border-radius: 2px;
@@ -370,24 +368,23 @@ async function onSubmit() {
   15%{ opacity: 1 }
   100%{ opacity: 0; transform: translate(var(--x), var(--y)) scale(1.2) rotate(var(--rz)) }
 }
-/* Tick animato */
 .tick{ width: 74px; height: 74px; }
 .tick__path{
-  fill: none; stroke: var(--neon-cyan); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
+  fill:none; stroke: var(--neon-cyan); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw .6s .15s ease forwards;
   filter: drop-shadow(0 0 12px color-mix(in oklab, var(--neon-cyan), transparent 50%));
 }
 @keyframes draw { to { stroke-dashoffset: 0 } }
 
-/* Honeypot (nascosto) */
+/* Honeypot */
 .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0 }
 
-/* Reveal (aggancia l’IO globale già presente) */
+/* Reveal */
 .reveal{ opacity:0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease }
 .reveal.reveal-in{ opacity:1; transform:none }
 
-/* Riduci movimento per accessibilità */
+/* Riduci movimento */
 @media (prefers-reduced-motion: reduce) {
-  .contact__progress, .contact__holo, .particle, .tick__path, .btn__plane { animation: none !important }
+  .contact__progress, .contact__holo, .particle, .tick__path, .btn__jet, .contact__form.shake { animation: none !important }
 }
 </style>
