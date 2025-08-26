@@ -76,19 +76,7 @@ body{
   line-height:1.6; letter-spacing:.15px;
   overflow-x:clip; /* <— elimina scroll X in ogni caso */
 }
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(
-    400px circle at var(--x, 50%) var(--y, 50%),
-    rgba(122,162,255,0.12),
-    transparent 70%
-  );
-  pointer-events: none;
-  z-index: 0;
-  transition: background-position 0.1s ease;
-}
+
 
 img{display:block;max-width:100%;height:auto}
 .logo-img {width: 50px;height:50px}

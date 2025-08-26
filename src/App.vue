@@ -1,6 +1,8 @@
 <template>
   <div>
     <SiteHeader :theme="theme" @toggle-theme="toggleTheme" />
+    <!-- 2) Spotlight sicuro (non blocca il render) -->
+    <SpotlightSafe :size="52" :trail-length="380" :speed="0.24" :intensity="1.1" />
     <router-view />
     <!-- <SiteFooter :theme="theme" /> -->
   </div>
@@ -10,6 +12,7 @@
 import { ref, watchEffect, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import SiteHeader from "./components/SiteHeader.vue";
+import SpotlightSafe from "@/components/SpotlightOrb.vue"
 // import SiteFooter from "./components/SiteFooter.vue";
 
 const theme = ref(localStorage.getItem("theme") ?? "dark");
