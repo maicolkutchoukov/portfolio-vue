@@ -6,20 +6,21 @@
         <p>Scrivimi due righe: risponderò con una proposta chiara e tempi definiti.</p>
       </header>
 
-      <!-- Stati visivi: loading / done / error -->
-      <form
-        class="contact__form reveal"
-        :class="{'is-loading': loading, 'is-done': done, 'is-error': !!error}"
-        @submit.prevent="onSubmit"
-        novalidate
-        aria-describedby="contact-status"
-      >
-        <!-- Progress indeterminato in alto -->
-        <span class="contact__progress" aria-hidden="true"></span>
-        <!-- Beam olografico durante invio -->
-        <span class="contact__beam" aria-hidden="true"></span>
-        <!-- Holo frame -->
+      <form class="contact__form reveal" @submit.prevent="onSubmit" novalidate aria-describedby="contact-status">
+        <!-- Progress neon -->
+        <div class="contact__progress" v-show="loading" aria-hidden="true"></div>
+
+        <!-- Glow / holo frame -->
         <span class="contact__holo" aria-hidden="true"></span>
+
+        <!-- Success burst -->
+        <div class="burst" v-if="done" aria-hidden="true">
+          <span v-for="p in particles" :key="p.id" class="particle"
+                :style="{ '--x': p.x+'px', '--y': p.y+'px', '--rz': p.r+'deg', '--d': p.d+'ms' }"></span>
+          <svg class="tick" viewBox="0 0 52 52">
+            <path class="tick__path" d="M14 27 L23 36 L38 18" />
+          </svg>
+        </div>
 
         <div class="contact__grid">
           <!-- Nome -->
@@ -78,31 +79,23 @@
         </div>
 
         <div class="contact__actions">
-          <button class="btn primary contact__btn" type="submit" :disabled="loading">
-            <!-- Idle -->
-            <span v-if="!loading && !done" class="btn__label">
-              <!-- icona razzo -->
-              <svg class="ico-rocket" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2c3.5 0 6 2.5 6 6 0 .7-.1 1.3-.3 1.9l2.7 2.7c.4.4.1 1.1-.5 1.2l-3.7.7-.7 3.7c-.1.6-.8.9-1.2.5L11.9 16c-.6.2-1.2.3-1.9.3-3.5 0-6-2.5-6-6S6.5 2 10 2h2zM6 16c1.7 0 3 1.3 3 3-1.7 0-3-1.3-3-3z" fill="currentColor"/>
-              </svg>
-              Invia richiesta
+          <button
+            class="btn primary contact__btn"
+            type="submit"
+            :disabled="loading"
+            :class="{ 'is-loading': loading, 'is-done': done }"
+          >
+            <span class="btn__content" aria-hidden="true">
+              <span class="btn__plane" v-if="loading"></span>
+              <span class="btn__label" v-if="!loading && !done">Invia richiesta</span>
+              <span class="btn__label" v-else-if="loading">Invio…</span>
+              <span class="btn__label" v-else>Inviato</span>
             </span>
-
-            <!-- Loading -->
-            <span v-else-if="loading" class="btn__label btn__spinner">
-              <span class="spn" aria-hidden="true"></span> Invio…
+            <span class="sr-only">
+              <template v-if="loading">Invio in corso…</template>
+              <template v-else-if="done">Messaggio inviato correttamente.</template>
+              <template v-else>Pronto all'invio.</template>
             </span>
-
-            <!-- Done -->
-            <span v-else class="btn__label">
-              <svg class="ico-check" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 16.2l-3.5-3.6-1.4 1.4L9 19 20 8l-1.4-1.4z" fill="currentColor"/>
-              </svg>
-              Inviato
-            </span>
-
-            <!-- Scia motore razzo (solo durante loading) -->
-            <span class="btn__thrust" aria-hidden="true"></span>
           </button>
 
           <p class="form-note">
@@ -118,12 +111,10 @@
           <template v-else-if="error">{{ error }}</template>
         </p>
 
-        <!-- Toast -->
+        <!-- Alert visivo -->
         <div v-if="done" class="contact__toast contact__toast--ok" role="status" aria-live="polite">
           <span class="ico" aria-hidden="true">✓</span>
           Grazie! Ti risponderò a breve.
-          <!-- microparticelle di conferma -->
-          <span class="confetti" aria-hidden="true"></span>
         </div>
         <div v-if="error" class="contact__toast contact__toast--err" role="alert" aria-live="assertive">
           <span class="ico" aria-hidden="true">!</span>
@@ -143,6 +134,9 @@ const loading = ref(false)
 const done = ref(false)
 const error = ref('')
 
+// particelle per l'esplosione di successo
+const particles = ref([])
+
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function validate() {
@@ -153,6 +147,17 @@ function validate() {
   else if (!emailRe.test(form.value.email)) { errors.value.email = 'Formato email non valido.'; ok = false }
   if (!form.value.message) { errors.value.message = 'Scrivi un breve messaggio.'; ok = false }
   return ok
+}
+
+function makeParticles(n = 26) {
+  // genera una rosa di particelle attorno al bottone
+  particles.value = Array.from({ length: n }, (_, i) => ({
+    id: i,
+    x: (Math.random() - 0.5) * 360, // offset x
+    y: (Math.random() - 0.5) * 240, // offset y
+    r: Math.floor(Math.random() * 360), // rotazione
+    d: 400 + Math.floor(Math.random() * 500) // durata
+  }))
 }
 
 async function onSubmit() {
@@ -173,115 +178,121 @@ async function onSubmit() {
       throw new Error(data?.error || 'Invio non riuscito, riprova tra poco.')
     }
     done.value = true
-    form.value = { name: '', email: '', message: '', website: '' }
-    // Auto-hide del toast dopo 6s
-    setTimeout(() => { done.value = false }, 6000)
+    makeParticles()
+    // reset form con piccolo delay per lasciare godere l'animazione
+    setTimeout(() => {
+      form.value = { name: '', email: '', message: '', website: '' }
+    }, 300)
   } catch (e) {
     error.value = e?.message || 'Errore imprevisto.'
   } finally {
-    loading.value = false
+    // lascia correre l’animazione di volo prima di spegnere lo stato loading
+    setTimeout(() => { loading.value = false }, 300)
   }
 }
 </script>
 
 <style scoped>
 /* =========================================================
-   CONTACT — Futuristic Glass + send animations
+   CONTACT — Futuristic Neon Animations + Accessibilità
    ========================================================= */
 
-.contact{ position: relative; }
-.contact::before{
-  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+:root {
+  /* Neon brand (coerenti con la tua palette) */
+  --neon-cyan: #00f5ff;
+  --neon-violet: #7c3aed;
+}
+
+/* Aura di sfondo leggerissima per la section */
+.contact { position: relative; }
+.contact::before {
+  content: "";
+  position: absolute; inset: 0;
   background:
-    radial-gradient(700px 360px at 86% 8%, rgba(122,162,255,.12), transparent 65%),
-    radial-gradient(560px 320px at 12% 92%, rgba(47,214,183,.10), transparent 60%);
+    radial-gradient(600px 320px at 85% 10%, color-mix(in oklab, var(--neon-violet), transparent 90%), transparent 60%),
+    radial-gradient(520px 300px at 15% 90%, color-mix(in oklab, var(--neon-cyan), transparent 90%), transparent 60%);
+  pointer-events: none; z-index: 0;
   filter: saturate(120%);
 }
-.contact__head p{ color:var(--muted) }
 
-/* Card */
+/* Testata */
+.contact__head p { color: var(--muted) }
+
+/* Card form */
 .contact__form{
-  position:relative; margin-top:16px; padding:20px; z-index:1;
+  position: relative;
+  margin-top: 16px;
+  padding: 20px;
   border-radius: var(--radius);
-  border:1px solid var(--stroke);
+  border: 1px solid var(--stroke);
   background:
     linear-gradient(180deg, color-mix(in oklab, var(--card), transparent 5%), transparent),
-    radial-gradient(120% 80% at 10% -10%, rgba(124,58,237,.10), transparent 70%),
-    radial-gradient(120% 80% at 100% 110%, rgba(0,245,255,.08), transparent 70%);
+    radial-gradient(120% 80% at 10% -10%, color-mix(in oklab, var(--neon-violet), transparent 90%), transparent 70%),
+    radial-gradient(120% 80% at 100% 110%, color-mix(in oklab, var(--neon-cyan), transparent 92%), transparent 70%);
   box-shadow: var(--shadow);
+  z-index: 1;
   overflow: clip;
-  will-change: transform, filter;
-  transform-origin: 50% 50%;
 }
 
-/* Holo ring */
+/* Progress bar superiore (solo quando loading) */
+.contact__progress{
+  position:absolute; top:0; left:0; height:3px; width:100%;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet));
+  transform-origin: 0 50%;
+  animation: prog 1.2s ease-in-out infinite;
+}
+@keyframes prog {
+  0% { transform: scaleX(0); opacity:.8 }
+  50% { transform: scaleX(.6); opacity:1 }
+  100% { transform: scaleX(1); opacity:.8 }
+}
+
+/* Holo ring animato sul bordo (conic gradient) */
 .contact__holo{
   position:absolute; inset:0; border-radius:inherit; pointer-events:none;
-  background: conic-gradient(from 0deg, transparent 0 30%, rgba(0,245,255,.30), transparent 60% 100%);
+  background:
+    conic-gradient(from 0deg,
+      transparent 0 24%,
+      color-mix(in oklab, var(--neon-cyan), transparent 40%) 24% 38%,
+      transparent 38% 62%,
+      color-mix(in oklab, var(--neon-violet), transparent 40%) 62% 76%,
+      transparent 76% 100%);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite:xor; mask-composite:exclude;
+  padding: 1px;
   opacity:.0; transition: opacity .5s ease;
 }
-.contact__form:hover .contact__holo{ opacity:.9 }
+.contact__form:hover .contact__holo{ opacity: .9 }
 
-/* Progress indeterminato in alto (attivo quando loading) */
-.contact__progress{
-  position:absolute; left:0; top:0; right:0; height:3px; opacity:0; pointer-events:none;
-  background:
-    linear-gradient(90deg, transparent, rgba(0,245,255,.6), transparent);
-  transform: translateX(-100%);
+/* Griglia campi */
+.contact__grid{
+  display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px;
 }
-.is-loading .contact__progress{
-  opacity:1;
-  animation: barRun 1.1s ease-in-out infinite;
+.contact__actions{
+  display:flex; align-items:center; gap: 12px; margin-top: 14px; flex-wrap: wrap;
 }
-@keyframes barRun{
-  0%{ transform: translateX(-100%) }
-  50%{ transform: translateX(0) }
-  100%{ transform: translateX(100%) }
+@media (max-width: 720px){
+  .contact__grid{ grid-template-columns: 1fr }
 }
-
-/* Beam olografico durante invio */
-.contact__beam{
-  position:absolute; inset:-30% -10%; height:60%; top:-20%;
-  background:
-    radial-gradient(20% 140% at 50% 50%, rgba(122,162,255,.22), transparent 60%),
-    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0));
-  filter: blur(8px); transform: translateY(-120%) rotate(8deg);
-  opacity:0; pointer-events:none; mix-blend-mode:screen;
-}
-.is-loading .contact__beam{
-  opacity:1;
-  animation: beamSweep 1.8s ease-in-out infinite;
-}
-@keyframes beamSweep{
-  0%,10%{ transform: translateY(-120%) rotate(8deg) }
-  50%{ transform: translateY(80%) rotate(8deg) }
-  100%{ transform: translateY(120%) rotate(8deg) }
-}
-
-/* Grid */
-.contact__grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:14px }
-.contact__actions{ display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap }
-@media (max-width: 720px){ .contact__grid{ grid-template-columns:1fr } }
 
 /* Field */
 .fld{ display:flex; flex-direction:column; gap:6px }
 .fld--full{ grid-column: 1/-1 }
 .fld__label{ font-weight:800; font-size:.95rem }
 .fld__control{
-  width:100%; padding:11px 12px; border-radius:12px;
-  border:1px solid var(--stroke);
+  width:100%;
+  padding: 11px 12px;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
   background: color-mix(in oklab, var(--bg), #0b1220 40%);
-  color:var(--text);
+  color: var(--text);
   transition: outline-color var(--t-fast) ease, border-color var(--t-fast) ease, box-shadow var(--t-fast) ease, transform .2s ease;
   box-shadow: inset 0 0 0 0 rgba(122,162,255,0);
 }
 .fld__control:focus{
-  outline:2px solid rgba(109,140,255,.55);
-  border-color:transparent;
-  box-shadow: 0 0 0 6px rgba(122,162,255,.12);
-  transform: translateZ(0) scale(1.01);
+  outline: 2px solid color-mix(in oklab, var(--neon-cyan), transparent 45%);
+  border-color: transparent;
+  box-shadow: 0 0 0 6px color-mix(in oklab, var(--neon-cyan), transparent 85%);
 }
 .fld__control[aria-invalid="true"]{
   border-color: color-mix(in oklab, #ff6b6b 70%, var(--stroke));
@@ -289,86 +300,94 @@ async function onSubmit() {
 }
 .fld__error{ color:#ffb3b3; font-size:.9rem }
 
-/* Button rocket */
-.contact__btn{ min-width: 210px; position:relative; overflow:hidden }
-.ico-rocket{ width:18px; height:18px; margin-right:8px; vertical-align:-3px }
-.ico-check { width:18px; height:18px; margin-right:8px; vertical-align:-3px }
-
-.btn__spinner .spn{
-  display:inline-block; width:14px; height:14px; margin-right:8px;
-  border-radius:50%; border:2px solid rgba(0,0,0,.2); border-top-color: rgba(0,0,0,.65);
-  animation: spin 1s linear infinite; vertical-align:-2px;
+/* Bottone + micro-animazioni */
+.contact__btn{
+  min-width: 200px; position: relative; overflow:hidden;
+  border: 1px solid color-mix(in oklab, var(--neon-cyan), var(--neon-violet) 40%);
 }
-@keyframes spin{ to{ transform: rotate(360deg) } }
-
-/* Spinta del razzo (solo in loading) */
-.btn__thrust{
-  position:absolute; left:0; right:0; bottom:-40%; height:160%;
-  background:
-    radial-gradient(40% 60% at 50% 40%, rgba(0,245,255,.32), transparent 60%),
-    radial-gradient(30% 40% at 50% 60%, rgba(124,58,237,.25), transparent 60%);
-  filter: blur(12px); opacity:0; transform: translateY(20%);
-  pointer-events:none; mix-blend-mode:screen;
+.contact__btn::after{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.0;
+  background: radial-gradient(120px 60px at var(--x,50%) var(--y,50%), color-mix(in oklab, var(--neon-cyan), transparent 75%), transparent 60%);
+  transition: opacity .25s ease;
 }
-.is-loading .btn__thrust{ opacity:1; animation: thrust 1.2s ease-in-out infinite }
-@keyframes thrust{
-  0%{ transform: translateY(22%) scale(1) }
-  50%{ transform: translateY(0%) scale(1.02) }
-  100%{ transform: translateY(22%) scale(1) }
+.contact__btn:hover::after{ opacity:.8 }
+.contact__btn.is-loading{ cursor: progress }
+.contact__btn.is-done{
+  background: linear-gradient(90deg, color-mix(in oklab, var(--neon-cyan), transparent 20%), color-mix(in oklab, var(--neon-violet), transparent 20%));
+  animation: btnPulse 1.6s ease-out 1;
+}
+@keyframes btnPulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--neon-cyan), transparent 60%) }
+  100% { box-shadow: 0 0 0 18px transparent }
 }
 
-/* Animazioni del bottone nei vari stati */
-.contact__form.is-loading .contact__btn{
-  transform: translateZ(0);
-  box-shadow: 0 10px 28px rgba(122,162,255,.25);
+/* Icona aereo (loading) */
+.btn__plane{
+  width: 16px; height: 16px; display:inline-block; margin-right:8px; background: currentColor; clip-path: polygon(0 45%, 70% 45%, 70% 30%, 100% 50%, 70% 70%, 70% 55%, 0 55%);
+  animation: plane 900ms ease-in-out infinite;
+  vertical-align: -2px;
 }
-.contact__form.is-done .contact__btn{
-  animation: pulseOk 1.2s ease-out;
-}
-@keyframes pulseOk{
-  0%{ box-shadow: 0 0 0 0 rgba(47,214,183,.0) }
-  50%{ box-shadow: 0 0 0 12px rgba(47,214,183,.15) }
-  100%{ box-shadow: 0 0 0 0 rgba(47,214,183,.0) }
+@keyframes plane {
+  0% { transform: translateX(0) translateY(0) rotate(0) }
+  50% { transform: translateX(6px) translateY(-2px) rotate(5deg) }
+  100% { transform: translateX(0) translateY(0) rotate(0) }
 }
 
-/* Confetti micro (leggeri) */
-.contact__toast{ margin-top:12px; display:inline-flex; align-items:center; gap:10px;
-  padding:10px 12px; border-radius:12px; font-weight:700; border:1px solid var(--stroke);
-  background: rgba(0,0,0,.15); animation: toastIn .36s cubic-bezier(.2,.8,.2,1) }
-.contact__toast .ico{ display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; font-size:12px; font-weight:1000 }
-.contact__toast--ok .ico{ background: rgba(47,214,183,.25) }
+/* Toast (success / error) */
+.contact__toast{
+  margin-top: 12px;
+  display:inline-flex; align-items:center; gap:10px;
+  padding: 10px 12px; border-radius: 12px; font-weight: 700;
+  border: 1px solid var(--stroke); background: rgba(0,0,0,.15);
+  animation: toastIn .36s cubic-bezier(.2,.8,.2,1);
+}
+.contact__toast .ico{
+  display:inline-grid; place-items:center; width: 20px; height: 20px; border-radius:50%;
+  font-size: 12px; font-weight: 1000;
+}
+.contact__toast--ok .ico{ background: color-mix(in oklab, var(--neon-cyan), transparent 75%) }
 .contact__toast--err .ico{ background: rgba(255,107,107,.25) }
-@keyframes toastIn{ from{ opacity:0; transform: translateY(6px) scale(.98) } to{ opacity:1; transform:none } }
-
-.confetti{
-  position:relative; display:inline-block; width:0; height:0; margin-left:6px;
-}
-.confetti::before, .confetti::after{
-  content:""; position:absolute; left:0; top:0; width:120px; height:120px; pointer-events:none;
-  background:
-    radial-gradient(2px 2px at 10% 20%, rgba(0,245,255,.9) 50%, transparent 60%),
-    radial-gradient(2px 2px at 70% 30%, rgba(124,58,237,.9) 50%, transparent 60%),
-    radial-gradient(2px 2px at 30% 70%, rgba(122,162,255,.9) 50%, transparent 60%),
-    radial-gradient(2px 2px at 80% 80%, rgba(47,214,183,.9) 50%, transparent 60%);
-  opacity:0; transform: translateY(-6px) scale(.98);
-}
-.is-done .confetti::before{ animation: confA .9s ease-out forwards }
-.is-done .confetti::after { animation: confB 1.1s ease-out forwards }
-@keyframes confA{
-  0%{ opacity:0; transform: translateY(-6px) scale(.9) }
-  30%{ opacity:1 }
-  100%{ opacity:0; transform: translateY(6px) scale(1.08) }
-}
-@keyframes confB{
-  0%{ opacity:0; transform: translateY(-8px) scale(.9) }
-  30%{ opacity:1 }
-  100%{ opacity:0; transform: translateY(10px) scale(1.1) }
+@keyframes toastIn{
+  from{ opacity:0; transform: translateY(6px) scale(.98) }
+  to  { opacity:1; transform: none }
 }
 
-/* Honeypot */
+/* Success burst */
+.burst{
+  position:absolute; inset:0; pointer-events:none; z-index: 2;
+  display:grid; place-items:center;
+}
+.particle{
+  position:absolute; top: calc(100% - 56px); left: 50%;
+  width: 8px; height: 8px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet));
+  transform: translate(calc(var(--x)), calc(var(--y))) rotate(var(--rz));
+  animation: pop var(--d) cubic-bezier(.2,.8,.2,1) forwards;
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--neon-cyan), transparent 40%));
+}
+@keyframes pop{
+  0% { opacity: 0; transform: translate(0,0) scale(.5) rotate(0) }
+  15%{ opacity: 1 }
+  100%{ opacity: 0; transform: translate(var(--x), var(--y)) scale(1.2) rotate(var(--rz)) }
+}
+/* Tick animato */
+.tick{ width: 74px; height: 74px; }
+.tick__path{
+  fill: none; stroke: var(--neon-cyan); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw .6s .15s ease forwards;
+  filter: drop-shadow(0 0 12px color-mix(in oklab, var(--neon-cyan), transparent 50%));
+}
+@keyframes draw { to { stroke-dashoffset: 0 } }
+
+/* Honeypot (nascosto) */
 .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0 }
 
-/* Reveal hook (dal tuo IO globale) */
+/* Reveal (aggancia l’IO globale già presente) */
 .reveal{ opacity:0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease }
 .reveal.reveal-in{ opacity:1; transform:none }
+
+/* Riduci movimento per accessibilità */
+@media (prefers-reduced-motion: reduce) {
+  .contact__progress, .contact__holo, .particle, .tick__path, .btn__plane { animation: none !important }
+}
 </style>
