@@ -15,9 +15,9 @@
           v-for="(s, i) in services"
           :key="s.title"
           class="card srv-card"
-          style="grid-column:span 4"
           :style="{'--i': i}"
         >
+
           <div class="srv-inner">
             <!-- Icona -->
             <div class="srv-ic" aria-hidden="true" v-html="s.icon"></div>
@@ -126,6 +126,7 @@ const services = [
 </script>
 
 <style scoped>
+
 /* Aurora di sezione */
 .srv-bg{
   position:absolute; inset:0; pointer-events:none; z-index:0;
@@ -213,6 +214,41 @@ const services = [
 .srv-steps li span{
   display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%;
   background: color-mix(in oklab, var(--primary), #000 8%); color:#061017; font-weight:800; font-size:12px;
+}
+/* il background assoluto si ancora alla sezione */
+#servizi { position: relative; }
+
+/* grid locale (se non già definita globalmente) */
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+
+/* colonne responsive senza inline style */
+.srv-card { grid-column: span 12; }
+@media (min-width: 576px){ .srv-card { grid-column: span 6; } }  /* 2 per riga */
+@media (min-width: 992px){ .srv-card { grid-column: span 4; } }  /* 3 per riga */
+
+/* animazione d’ingresso (resta uguale) */
+.srv-card{
+  position: relative; overflow: hidden;
+  transition: transform var(--t-med) ease, box-shadow var(--t-med) ease, border-color var(--t-med) ease, filter var(--t-med) ease;
+  opacity: 0; transform: translateY(16px);
+  animation: srvIn .7s cubic-bezier(.2,.8,.2,1) forwards;
+  animation-delay: calc(60ms * var(--i, 0));
+}
+@keyframes srvIn { to { opacity:1; transform:none } }
+
+/* FIX: prefer-reduced-motion — rendi subito visibili le card e la sezione 'reveal' */
+@media (prefers-reduced-motion: reduce){
+  .srv-card{
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .srv-card::before, .srv-shine{
+    animation: none !important;
+    transition: none !important;
+  }
+  /* se usi il sistema globale .reveal/.reveal-in in App.vue */
+  .reveal{ opacity: 1 !important; transform: none !important; }
 }
 
 /* responsive */
